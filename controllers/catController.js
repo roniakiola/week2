@@ -52,7 +52,8 @@ const cat_post = async (req, res, next) => {
 
 const cat_update_put = async (req, res, next) => {
   try {
-    console.log(req.body);
+    console.log('cat_update_put', req.body);
+    //date YYYY-MM-DD
     const { name, weight, owner, birthdate, id } = req.body;
     const result = await updateCat(name, weight, owner, birthdate, id, next);
     if (result.affectedRows > 0){
