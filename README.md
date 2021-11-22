@@ -1,4 +1,4 @@
-<h1>Week2, Week3 and Week4 exercises can be found in their representative branches<h1>
+<h1>Database, Week3 and Week4 exercises can be found in their representative branches</h1>
  
-<p> Building REST-api <p>
+<p> Building REST-api </p>
 
