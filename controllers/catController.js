@@ -1,8 +1,13 @@
 'use strict';
-
 const { validationResult } = require('express-validator');
-const { getAllCats, getCat, addCat, updateCat, deleteCat } = require('../models/catModel');
-
+// catController
+const {
+  getAllCats,
+  getCat,
+  addCat,
+  modifyCat,
+  deleteCat,
+} = require('../models/catModel');
 const { httpError } = require('../utils/errors');
 
 const cat_list_get = async (req, res, next) => {
@@ -34,21 +39,30 @@ const cat_get = async (req, res, next) => {
 };
 
 const cat_post = async (req, res, next) => {
+  console.log('cat_post', req.body, req.file, req.user);
   const errors = validationResult(req);
-  if(!errors.isEmpty()){
+  if (!errors.isEmpty()) {
     console.log('cat_post validation', errors.array());
     next(httpError('invalid data', 400));
     return;
   }
-  if(!req.file){
+
+  if (!req.file) {
     const err = httpError('file not valid', 400);
     next(err);
     return;
   }
+
   try {
-    console.log('lomakkeesta', req.body);
-    const { name, weight, owner, birthdate } = req.body;
-    const tulos = await addCat(name, weight, owner, req.file.filename, birthdate, next);
+    const { name, birthdate, weight } = req.body;
+    const tulos = await addCat(
+      name,
+      weight,
+      req.user.user_id,
+      birthdate,
+      req.file.filename,
+      next
+    );
     if (tulos.affectedRows > 0) {
       res.json({
         message: 'cat added',
@@ -63,33 +77,62 @@ const cat_post = async (req, res, next) => {
   }
 };
 
-const cat_update_put = async (req, res, next) => {
+const cat_put = async (req, res, next) => {
+  console.log('cat_put', req.body, req.params);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log('cat_put validation', errors.array());
+    next(httpError('invalid data', 400));
+    return;
+  }
+  // pvm VVVV-KK-PP esim 2010-05-28
   try {
-    console.log('cat_update_put', req.body);
-    //date YYYY-MM-DD
-    const { name, weight, owner, birthdate, id } = req.body;
-    const result = await updateCat(name, weight, owner, birthdate, id, next);
-    if (result.affectedRows > 0){
-      res.json(result);
+    const { name, birthdate, weight } = req.body;
+    /*let owner = req.user.user_id;
+    if (req.user.role === 0) {
+      owner = req.body.owner;
+    }*/
+
+    const owner = req.user.role === 0 ? req.body.owner : req.user.user_id;
+
+    const tulos = await modifyCat(
+      name,
+      weight,
+      owner,
+      birthdate,
+      req.params.id,
+      req.user.role,
+      next
+    );
+    if (tulos.affectedRows > 0) {
+      res.json({
+        message: 'cat modified',
+        cat_id: tulos.insertId,
+      });
     } else {
-      next(httpError('No cat updated', 400));
+      next(httpError('No cat modified', 400));
     }
-  } catch (e){
-    console.log('cat_update_put error', e.message);
+  } catch (e) {
+    console.log('cat_put error', e.message);
     next(httpError('internal server error', 500));
   }
 };
 
 const cat_delete = async (req, res, next) => {
   try {
-    console.log(req.body);
-    const result = await deleteCat(req.params.id, next);
-    if (result.affectedRows > 0) {
+    const vastaus = await deleteCat(
+      req.params.id,
+      req.user.user_id,
+      req.user.role,
+      next
+    );
+    if (vastaus.affectedRows > 0) {
       res.json({
-        message: 'cat deleted'
+        message: 'cat deleted',
+        cat_id: vastaus.insertId,
       });
     } else {
-      next(httpError('Cat not deleted', 400));
+      next(httpError('No cat found', 404));
     }
   } catch (e) {
     console.log('cat_delete error', e.message);
@@ -101,6 +144,6 @@ module.exports = {
   cat_list_get,
   cat_get,
   cat_post,
-  cat_update_put,
-  cat_delete
+  cat_put,
+  cat_delete,
 };

@@ -1,8 +1,7 @@
 'use strict';
-
 const { validationResult } = require('express-validator');
+// userController
 const { getAllUsers, getUser, addUser } = require('../models/userModel');
-
 const { httpError } = require('../utils/errors');
 
 const user_list_get = async (req, res, next) => {
@@ -35,7 +34,7 @@ const user_get = async (req, res, next) => {
 
 const user_post = async (req, res, next) => {
   const errors = validationResult(req);
-  if(!errors.isEmpty()){
+  if (!errors.isEmpty()) {
     console.log('user_post validation', errors.array());
     next(httpError('invalid data', 400));
     return;
@@ -53,9 +52,17 @@ const user_post = async (req, res, next) => {
     } else {
       next(httpError('No user inserted', 400));
     }
-  } catch (error) {
+  } catch (e) {
     console.log('user_post error', e.message);
     next(httpError('internal server error', 500));
+  }
+};
+
+const checkToken = (req, res, next) => {
+  if (!req.user) {
+    next(new Error('token not valid'));
+  } else {
+    res.json({ user: req.user });
   }
 };
 
@@ -63,4 +70,5 @@ module.exports = {
   user_list_get,
   user_get,
   user_post,
+  checkToken,
 };
