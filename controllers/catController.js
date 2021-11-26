@@ -9,6 +9,8 @@ const {
   deleteCat,
 } = require('../models/catModel');
 const { httpError } = require('../utils/errors');
+const { getCoordinates } = require('../utils/imageMeta');
+const { makeThumbnail } = require('../utils/resize');
 
 const cat_list_get = async (req, res, next) => {
   try {
@@ -54,22 +56,38 @@ const cat_post = async (req, res, next) => {
   }
 
   try {
-    const { name, birthdate, weight } = req.body;
+    const coords = await getCoordinates(req.file.path);
+    req.body.coords = coords;
+  } catch (e) {
+    req.body.coords = [24.74, 60.24];
+  }
+
+  try {
+    const thumb = await makeThumbnail(
+      req.file.path,
+      './thumbnails/' + req.file.filename
+    );
+
+    const { name, birthdate, weight, coords } = req.body;
+
     const tulos = await addCat(
       name,
       weight,
       req.user.user_id,
       birthdate,
       req.file.filename,
+      JSON.stringify(coords),
       next
     );
-    if (tulos.affectedRows > 0) {
-      res.json({
-        message: 'cat added',
-        cat_id: tulos.insertId,
-      });
-    } else {
-      next(httpError('No cat inserted', 400));
+    if (thumb) {
+      if (tulos.affectedRows > 0) {
+        res.json({
+          message: 'cat added',
+          cat_id: tulos.insertId,
+        });
+      } else {
+        next(httpError('No cat inserted', 400));
+      }
     }
   } catch (e) {
     console.log('cat_post error', e.message);

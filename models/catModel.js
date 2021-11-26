@@ -13,7 +13,8 @@ const getAllCats = async (next) => {
 	weight, 
 	owner, 
 	filename,
-	birthdate, 
+	birthdate,
+	coords, 
 	wop_user.name as ownername 
 	FROM wop_cat 
 	JOIN wop_user ON 
@@ -36,6 +37,7 @@ const getCat = async (id, next) => {
 	  owner, 
 	  filename,
 	  birthdate, 
+	  coords,
 	  wop_user.name as ownername 
 	  FROM wop_cat 
 	  JOIN wop_user ON 
@@ -50,11 +52,19 @@ const getCat = async (id, next) => {
   }
 };
 
-const addCat = async (name, weight, owner, birthdate, filename, next) => {
+const addCat = async (
+  name,
+  weight,
+  owner,
+  birthdate,
+  filename,
+  coords,
+  next
+) => {
   try {
     const [rows] = await promisePool.execute(
-      'INSERT INTO wop_cat (name, weight, owner, filename, birthdate) VALUES (?, ?, ?, ?, ?)',
-      [name, weight, owner, filename, birthdate]
+      'INSERT INTO wop_cat (name, weight, owner, filename, birthdate, coords) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, weight, owner, filename, birthdate, coords]
     );
     return rows;
   } catch (e) {
